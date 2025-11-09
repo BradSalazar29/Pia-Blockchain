@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AyudaChain - Dashboard</title>
+    
+    <script src="ethers.umd.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --dark-bg: #0d1117;
+            --card-bg: rgba(30, 30, 40, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --primary-color: #8a7ffb;
+            --primary-glow: rgba(138, 127, 251, 0.3);
+            --green-color: #28a745;
+            --green-glow: rgba(40, 167, 69, 0.3);
+            --text-primary: #f0f0f0;
+            --text-secondary: #a0a0a0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            background-image: linear-gradient(315deg, #1a1a2e 0%, #0d1117 30%, #0d1117 70%, #1e1e4e 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 20s ease infinite;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 20px 40px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(13, 17, 23, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+        }
+        
+        header h1 {
+            font-weight: 600;
+            font-size: 1.8em;
+            margin: 0;
+            margin-left: 12px;
+            color: var(--primary-color);
+        }
+        
+        header svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--primary-color);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            margin-bottom: 24px;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+            padding: 24px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 100px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar { display: none; }
+        .sidebar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+        .wallet-section {
+            padding: 25px;
+            text-align: left;
+        }
+        
+        .wallet-section .alert-box {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 0;
+            margin-bottom: 0;
+            text-align: center;
+        }
+
+        .wallet-section .alert-box strong {
+            display: block;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+        
+        .btn-connect-wallet {
+            background: linear-gradient(90deg, var(--primary-color), #a098ff);
+            padding: 14px 30px;
+            font-size: 16px;
+            border-radius: 50px;
+            box-shadow: 0 6px 20px var(--primary-glow);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            width: auto;
+            margin-top: 0;
+            font-weight: 600;
+            color: #121212;
+        }
+        
+        .btn-connect-wallet:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 10px 25px var(--primary-glow);
+            filter: brightness(1.1);
+        }
+        
+        #infoWallet {
+            text-align: left;
+            display: none;
+        }
+
+        .wallet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .wallet-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .btn-disconnect-wallet {
+            background: transparent;
+            border: 1px solid #777;
+            color: var(--text-secondary);
+            padding: 8px 15px;
+            font-size: 14px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            width: auto;
+            margin-top: 0;
+            font-weight: 400;
+        }
+
+        .btn-disconnect-wallet:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+            transform: none;
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.5);
+            filter: none;
+        }
+
+        .wallet-details p {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            word-wrap: break-word;
+        }
+
+        .wallet-details strong {
+            color: var(--text-secondary);
+            min-width: 80px;
+            display: inline-block;
+            font-weight: 400;
+        }
+        
+        .wallet-details span {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-family: 'Menlo', 'Courier New', monospace;
+        }
+        
+        .stats-card {
+            padding: 20px;
+        }
+        .stats-card h3 {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .stat-item span:first-child {
+            color: #aaa;
+        }
+        .stat-item span:last-child {
+            color: white;
+            font-weight: 600;
+            font-family: 'Menlo', 'Courier New', monospace;
+        }
+        #network-status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: var(--green-color);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 8px var(--green-glow);
+        }
+        
+        .main-content h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 24px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-section {
+            padding: 25px;
+        }
+        
+        .form-section h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .campanas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .campana-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            animation: fadeIn 0.4s ease-out;
+            overflow: hidden;
+        }
+
+        .campana-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 20px var(--primary-glow);
+            border-color: var(--primary-color);
+        }
+        
+        .campana-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .campana-titulo {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 5px;
+        }
+        
+        .campana-header small {
+            color: var(--text-secondary);
+            font-size: 12px;
+            word-wrap: break-word;
+            font-family: 'Menlo', 'Courier New', monospace;
+        }
+        
+        .campana-card p {
+            color: #c0c0c0;
+            flex-grow: 1;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .progress-bar {
+            background: rgba(0,0,0,0.3);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--primary-color), #a098ff);
+            background-size: 200% 100%;
+            height: 100%;
+            transition: width 0.5s ease-out;
+            animation: shimmer 3s infinite linear;
+            border-radius: 6px;
+        }
+        
+        .campana-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .campana-stats-grid div {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .campana-stats-grid span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        
+        .campana-stats-grid strong {
+            font-size: 16px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .campana-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+        
+        button {
+            background: var(--primary-color);
+            color: #121212;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        button:hover {
+            transform: scale(1.03);
+            filter: brightness(1.1);
+        }
+
+        button:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--green-color);
+            color: white;
+            box-shadow: 0 4px 15px var(--green-glow);
+        }
+        .btn-secondary:hover { 
+            background: #218838;
+            filter: brightness(1.1);
+        }
+        .btn-secondary:disabled {
+            background: #444;
+            color: #888;
+            box-shadow: none;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.2);
+            color: var(--text-primary);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: #888;
+            font-weight: 300;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .alert {
+            display: none;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .toast {
+            background: #2a2a2a;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1001;
+        }
+        
+        .toast.error {
+            background: #dc3545;
+            border-color: #ff7b7b;
+        }
+        
+        .toast.success {
+            background: var(--green-color);
+            border-color: #5bff8a;
+        }
+
+        .toast i {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .toast.slide-out {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            backdrop-filter: blur(10px);
+            width: 90%;
+            max-width: 450px;
+            padding: 30px;
+            animation: fadeIn 0.3s ease 0.1s backwards;
+        }
+        
+        .modal-card h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .modal-card p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        .modal-card #modal-input {
+            margin-top: 10px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn-modal-cancel {
+            background: #444;
+            color: white;
+        }
+        .btn-modal-cancel:hover {
+            background: #555;
+            filter: brightness(1.1);
+        }
+        
+        .btn-modal-confirm {
+            background: var(--primary-color);
+            color: #121212;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: static;
+                height: auto;
+                overflow-y: visible;
+            }
+            header {
+                padding: 20px 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dashboard-layout {
+                padding: 24px 15px;
+            }
+            header h1 {
+                font-size: 1.5em;
+            }
+            #toast-container {
+                width: calc(100% - 40px);
+                left: 20px;
+                right: 20px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.38 2.02c.79-1.36 2.45-1.36 3.24 0l1.63 2.82c.47 1.01 1.76 1.34 2.7.73l2.82-1.63c1.36-.79 3.01.23 3.01 1.8V8.1c0 1.07.89 1.95 1.96 1.95h3.38c1.57 0 2.22 1.93 1.02 2.9l-2.82 2.37c-.8.67-1.04 1.86-.58 2.87l1.63 2.82c.79 1.36-.23 3.01-1.8 3.01h-3.38c-1.07 0-1.95.89-1.95 1.96v3.38c0 1.57-1.93 2.22-2.9 1.02l-2.37-2.82c-.67-.8-1.86-1.04-2.87-.58l-2.82 1.63c-1.36.79-3.01-.23-3.01-1.8V15.9c0-1.07-.89-1.95-1.96-1.95H2.82c-1.57 0-2.22-1.93-1.02-2.9l2.82-2.37c.8-.67 1.04-1.86.58-2.87L3.6 5.98c-.79-1.36.23-3.01 1.8-3.01h3.38c1.07 0 1.95-.89 1.95-1.96V.82c0-1.57 1.93-2.22 2.9-1.02l2.37 2.82c.67.8 1.86 1.04 2.87.58l.01-.01zM11 8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        <h1>AyudaChain</h1>
+    </header>
+
+    <div class="dashboard-layout">
+        
+        <aside class="sidebar">
+            
+            <div class="wallet-section card">
+                <div id="alertaSinWallet" class="alert-box" style="display:block; text-align: center;">
+                    <strong>Conecta tu wallet</strong> para interactuar.
+                    <button id="btnConectar" onclick="conectarWallet()" class="btn-connect-wallet">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/MetaMask_Fox.svg/1200px-MetaMask_Fox.svg.png" alt="MetaMask Fox" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 10px;">
+                        Conectar MetaMask
+                    </button>
+                </div>
+                <div id="infoWallet" style="display:none; text-align: left;">
+                    <div class="wallet-header">
+                        <h3>Wallet Conectada</h3>
+                        <button id="btnDesconectar" onclick="desconectarWallet()" class="btn-disconnect-wallet">
+                            Desconectar <i class="fas fa-times" style="margin-left: 5px;"></i>
+                        </button>
+                    </div>
+                    <div class="wallet-details">
+                        <p><strong>Dirección:</strong> <span id="direccion"></span></p>
+                        <p><strong>Balance:</strong> <span id="balance"></span> ETH</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-card card">
+                <h3>Estado de la Red</h3>
+                <div class="stat-item">
+                    <span>Red:</span>
+                    <span id="network-name"><i class="fas fa-spin fa-spinner"></i></span>
+                </div>
+                <div class="stat-item">
+                    <span>Chain ID:</span>
+                    <span id="network-chainid"><i class="fas fa-spin fa-spinner"></i></span>
+                </div>
+            </div>
+            
+            <div class="stats-card card">
+                <h3>Estadísticas</h3>
+                <div class="stat-item">
+                    <span>Campañas Totales:</span>
+                    <span id="stat-total-campanas">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Total Donado:</span>
+                    <span id="stat-total-donado">0 ETH</span>
+                </div>
+            </div>
+
+            <div id="formCrearCampana" class="form-section card" style="display:none;">
+                <h2>Crear Nueva Campaña</h2>
+                <input type="text" id="titulo" placeholder="Título de tu campaña">
+                <textarea id="descripcion" placeholder="Describe por qué necesitas ayuda..."></textarea>
+                <input type="number" id="meta" placeholder="Meta en ETH (ejemplo: 5)">
+                <input type="number" id="duracion" placeholder="Duración en días (ejemplo: 30)">
+                <button class="btn-secondary" onclick="crearCampana()">Crear Campaña</button>
+            </div>
+            
+        </aside>
+
+        <main class="main-content">
+            <h2>Campañas Activas</h2>
+            <div id="campanas" class="campanas-grid">
+            </div>
+        </main>
+
+    </div>
+    
+    <div id="toast-container"></div>
+    
+    <div id="modal-overlay" class="modal-overlay" style="display:none;">
+        <div id="modal" class="modal-card">
+            <h3 id="modal-title">Título del Modal</h3>
+            <p id="modal-text">Texto del modal...</p>
+            <input type="number" id="modal-input" placeholder="0.0 ETH" style="display:none;">
+            <div class="modal-buttons">
+                <button id="modal-cancel" class="btn-modal-cancel">Cancelar</button>
+                <button id="modal-confirm" class="btn-modal-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
